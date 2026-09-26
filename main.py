@@ -77,11 +77,52 @@ def build_application() -> Application:
     return application
 
 
-def main():
-    """Botni tanlangan rejimda (polling yoki webhook) ishga tushirish."""
+import asyncio
+from aiohttp import web
+
+
+async def health_check_handler(request):
+    """Render Web Service port tekshiruvi (Health Check) uchun."""
+    return web.Response(text="IPE School Payment Bot is running OK!")
+
+
+async def run_dummy_server(port: int):
+    """Render Web Service talab qiladigan PORT da oddiy HTTP server yuritadi."""
+    app = web.Application()
+    app.router.add_get("/", health_check_handler)
+    app.router.add_get("/health", health_check_handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"Health check HTTP server {port}-portda ishga tushdi.")
+
+
+async def run_bot_and_server():
+    """Bot polling va HTTP health check serverini bitta jarayonda birgalikda ishlatish."""
     application = build_application()
 
+    # Agar Render Web Service PORT bergan bo'lsa, uni tinglaymiz
+    port = int(os.environ.get("PORT", config.PORT))
+    try:
+        await run_dummy_server(port)
+    except Exception as e:
+        logger.warning(f"HTTP serverni ishga tushirishda ogohlantirish (ehtimol port band): {e}")
+
+    logger.info("Bot Polling rejimida ishga tushmoqda...")
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling(drop_pending_updates=True)
+
+    # Doimiy ishlashni ushlab turish
+    stop_event = asyncio.Event()
+    await stop_event.wait()
+
+
+def main():
+    """Botni tanlangan rejimda (polling yoki webhook) ishga tushirish."""
     if config.RUN_MODE == "webhook":
+        application = build_application()
         logger.info(f"Bot Webhook rejimida ishga tushmoqda (PORT: {config.PORT})...")
         webhook_path = config.WEBHOOK_SECRET or "webhook"
         full_url = f"{config.WEBHOOK_URL.rstrip('/')}/{webhook_path}"
@@ -94,8 +135,14 @@ def main():
             secret_token=config.WEBHOOK_SECRET if config.WEBHOOK_SECRET else None,
         )
     else:
-        logger.info("Bot Polling rejimida ishga tushmoqda...")
-        application.run_polling(drop_pending_updates=True)
+        # Bitta serverda (Web Service - Free tier) polling va PORT listening
+        import os
+        if "PORT" in os.environ:
+            asyncio.run(run_bot_and_server())
+        else:
+            application = build_application()
+            logger.info("Bot Polling rejimida ishga tushmoqda...")
+            application.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":

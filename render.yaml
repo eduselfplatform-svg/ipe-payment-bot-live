@@ -1,9 +1,9 @@
 services:
-  - type: worker
+  - type: web
     name: ipe-payment-bot
     env: python
     region: frankfurt
-    plan: starter
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python main.py"
     envVars:
@@ -14,6 +14,8 @@ services:
       - key: PAYMENTS_CHANNEL_ID
         sync: false
       - key: FREE_LESSON_CHANNEL_ID
+        sync: false
+      - key: ADMIN_IDS
         sync: false
       - key: RUN_MODE
         value: polling
