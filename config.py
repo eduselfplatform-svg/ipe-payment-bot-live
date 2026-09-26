@@ -27,6 +27,7 @@ MAX_CHILDREN: int = int(os.getenv("MAX_CHILDREN", "10"))
 RUN_MODE: str = os.getenv("RUN_MODE", "polling").strip().lower()
 WEBHOOK_URL: str = os.getenv("WEBHOOK_URL", "").strip()
 WEBHOOK_SECRET: str = os.getenv("WEBHOOK_SECRET", "").strip()
+PORT: int = int(os.getenv("PORT", "8080"))
 CONVERSATION_TIMEOUT_SECONDS: int = int(os.getenv("CONVERSATION_TIMEOUT_SECONDS", "1800"))
 
 # Adminlar ID ro'yxati (ixtiyoriy, agar bo'sh bo'lsa kanalda admin huquqiga ega bo'lganlar get_chat_member orqali tekshiriladi)
