@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 from telegram.ext import (
@@ -136,7 +137,6 @@ def main():
         )
     else:
         # Bitta serverda (Web Service - Free tier) polling va PORT listening
-        import os
         if "PORT" in os.environ:
             asyncio.run(run_bot_and_server())
         else:
